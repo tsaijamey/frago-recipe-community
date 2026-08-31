@@ -2,7 +2,7 @@
 name: transcript_completion
 type: atomic
 runtime: python
-version: "1.0.0"
+version: "1.0.1"
 created_at: "2026-06-24T23:34:32+08:00"
 updated_at: "2026-07-01T12:20:20+08:00"
 description: "解析 Claude Code session JSONL，用权威 stop_reason 判定最新一轮是否答完并抽取该轮 assistant 最终文本。query 一次性查询 / watch 长驻事件式上报，watch 形态可由 daemon supervisor 托管"
