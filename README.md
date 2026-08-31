@@ -37,7 +37,7 @@ recipe of the same name always wins.
 The fastest path is from the machine where the recipe already works:
 
 ```bash
-frago recipe publish <recipe-name>
+frago recipe share <recipe-name>
 ```
 
 That forks this repository, copies the recipe into `recipes/<name>/`, and opens

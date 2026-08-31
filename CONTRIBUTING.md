@@ -91,8 +91,8 @@ frago recipe run my-recipe --params '{"url": "https://example.com"}'
 
 ## Submission Process
 
-The `frago recipe publish <recipe-name>` command does all four steps below
-for you. To do it by hand:
+`frago recipe share <recipe-name>` does all four steps below for you.
+To do it by hand:
 
 1. **Fork** this repository
 2. **Create** your recipe in `recipes/<recipe-name>/`
