@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- 版本号写在页面里，一条 curl 就能看出盘上是哪一版：
+     curl -s localhost:8093/app/frago_welcome/ | grep frago-welcome-version -->
+<meta name="frago-welcome-version" content="1.0.0">
+<title>frago — 装好了</title>
+
+<!-- 样式和脚本一律内联，整张页面刻意只有一个文件。拆成三份时，同步漏掉其中一份
+     就是「新脚本配旧骨架」，页面停在空白且不报错。一个文件之后要么整张是新的，
+     要么整张是旧的，没有中间态。 -->
+<style>
+:root {
+  --bg: #07090d;
+  --bg-2: #0d1117;
+  --ink: #f2f4f8;
+  --ink-mid: #b9c0cd;
+  --ink-dim: #7c8598;
+  --line: #1e242e;
+  --line-soft: #161b23;
+  --card: #10151d;
+  --accent: #35c97e;
+  --accent-dim: #1d7d4e;
+  --accent-soft: rgba(53, 201, 126, .12);
+  --warm: #f0b429;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 620px at 50% -18%, rgba(53, 201, 126, .13), transparent 62%),
+    radial-gradient(760px 460px at 88% 108%, rgba(53, 201, 126, .07), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+code, .mono { font-family: var(--mono); }
+
+/* ---------- 舞台 ---------- */
+
+.stage { height: 100dvh; display: flex; flex-direction: column; }
+
+.topbar {
+  flex: none; display: flex; align-items: center; gap: 16px;
+  padding: 18px 28px; font-size: 13.5px; color: var(--ink-dim);
+}
+.brand { display: flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 650; letter-spacing: -.2px; }
+.brand img { width: 26px; height: 26px; border-radius: 6px; display: block; }
+.topbar .spacer { margin-left: auto; }
+
+.ghost {
+  font: inherit; font-size: 13.5px; color: var(--ink-dim);
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 13px; cursor: pointer;
+  transition: color .14s ease, border-color .14s ease;
+}
+.ghost:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+/* ---------- 语言胶囊 ---------- */
+
+.langbar {
+  flex: none; width: 100%; max-width: 996px; margin: 0 auto; padding: 0 28px 10px;
+}
+.langpill {
+  display: inline-flex; padding: 3px; gap: 2px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--bg-2);
+}
+.langpill button {
+  font: inherit; font-size: 13px; font-weight: 600; line-height: 1;
+  color: var(--ink-dim); background: transparent; border: 0; border-radius: 999px;
+  padding: 7px 16px; cursor: pointer;
+  transition: color .14s ease, background .14s ease;
+}
+.langpill button:hover { color: var(--ink); }
+.langpill button.on { color: #06170e; background: var(--accent); }
+
+.deck {
+  flex: 1 1 auto; position: relative; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 28px;
+}
+
+.slide {
+  display: none;
+  width: 100%; max-width: 940px;
+  max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px 4px 12px;
+}
+.slide.on { display: block; }
+.slide.on [data-rise] { animation: rise .62s cubic-bezier(.16, .84, .34, 1) backwards; }
+.slide.on [data-rise="1"] { animation-delay: .04s; }
+.slide.on [data-rise="2"] { animation-delay: .13s; }
+.slide.on [data-rise="3"] { animation-delay: .22s; }
+.slide.on [data-rise="4"] { animation-delay: .31s; }
+.slide.on [data-rise="5"] { animation-delay: .40s; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .slide.on [data-rise] { animation: none; }
+  * { transition-duration: .01ms !important; }
+}
+
+.footbar {
+  flex: none; display: flex; align-items: center; gap: 14px;
+  padding: 16px 28px 22px; font-size: 13px; color: var(--ink-dim);
+}
+.dots { display: flex; gap: 7px; }
+.dots button {
+  width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--line); cursor: pointer; transition: background .18s ease, transform .18s ease;
+}
+.dots button:hover { background: var(--ink-dim); }
+.dots button.on { background: var(--accent); transform: scale(1.35); }
+.footbar .spacer { margin-left: auto; }
+.keyhint { display: flex; gap: 6px; align-items: center; }
+kbd {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-mid);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
+  padding: 1px 6px; background: var(--bg-2);
+}
+
+/* ---------- 文字 ---------- */
+
+.kicker {
+  margin: 0 0 14px; font-size: 12.5px; font-weight: 700; letter-spacing: 1.4px;
+  text-transform: uppercase; color: var(--accent);
+}
+h1 {
+  margin: 0 0 18px; font-size: clamp(32px, 5.6vw, 58px); line-height: 1.12;
+  letter-spacing: -1.7px; font-weight: 700;
+  /* 文案自己带的换行要认——标题在哪儿断是写文案的人定的，不是浏览器。 */
+  white-space: pre-line;
+}
+h2 {
+  margin: 0 0 14px; font-size: clamp(26px, 3.9vw, 40px); line-height: 1.14;
+  letter-spacing: -1px; font-weight: 700;
+}
+h3 { margin: 0 0 6px; font-size: 16.5px; letter-spacing: -.2px; }
+
+/* 名字在上、说明在下，上大下小：先认得这是什么，再看它凭什么。
+   名字按大标题的尺寸走，下面那句退成次级。 */
+.prodname {
+  margin: 0 0 4px; font-size: clamp(26px, 3.9vw, 40px); font-weight: 700;
+  letter-spacing: -1px; color: var(--ink); line-height: 1.14;
+}
+h2.sub { font-size: clamp(17px, 1.9vw, 22px); color: var(--ink-mid); font-weight: 600; }
+
+/* 整页的说明小字：讲的是这一层本身，不专属下面任何一张卡片。 */
+.pagenote { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-dim); }
+body.h-compact .prodname { font-size: clamp(24px, 3vw, 32px); }
+body.h-compact h2.sub { font-size: clamp(16px, 1.7vw, 19px); }
+.lead {
+  /* 跟下面的内容区等宽——限到 60 字符时它比对比区窄一大截，断行只能落在
+     句子中间。宽度够了，中文断行的问题自己就没了。 */
+  margin: 0 0 30px; font-size: clamp(16px, 1.5vw, 19px);
+  color: var(--ink-mid);
+  text-wrap: pretty;
+}
+.close { margin: 30px 0 0; font-size: 16px; color: var(--ink-mid); }
+.close b { color: var(--ink); font-weight: 650; }
+
+/* ---------- 按钮 ---------- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 15px; font-weight: 620;
+  padding: 12px 24px; border-radius: 11px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  transition: transform .14s ease, border-color .14s ease, filter .14s ease;
+}
+.btn:hover { transform: translateY(-1px); border-color: var(--ink-dim); }
+.btn:disabled { opacity: .55; cursor: default; transform: none; }
+.btn-primary { background: var(--accent); border-color: transparent; color: #06170e; }
+.btn-primary:hover { filter: brightness(1.07); border-color: transparent; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn-text {
+  font: inherit; font-size: 14px; color: var(--ink-dim); background: none;
+  border: 0; cursor: pointer; padding: 6px 2px;
+}
+.btn-text:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.btn-text.underline { text-decoration: underline; text-underline-offset: 4px; }
+
+/* 绿字底下那一行：说的是此刻的状态，不是导语，所以贴着 kicker 走、比标题轻。 */
+.hero-note { margin: -6px 0 16px; font-size: clamp(15px, 1.4vw, 18px); color: var(--ink-mid); }
+
+/* ---------- 第 2 屏：三行对照 ---------- */
+
+.rows { display: flex; flex-direction: column; gap: 14px; }
+.rowhead {
+  display: grid; grid-template-columns: 1fr auto 1.15fr; gap: 18px;
+  padding: 0 20px 4px;
+  font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+}
+.rowhead .before { color: var(--ink-dim); }
+.rowhead .after { color: var(--accent); }
+.row {
+  display: grid; grid-template-columns: 1fr auto 1.15fr; gap: 18px; align-items: center;
+  padding: 18px 20px; border: 1px solid var(--line-soft); border-radius: 14px;
+  background: linear-gradient(180deg, var(--card), rgba(16, 21, 29, .35));
+}
+.row .before { color: var(--ink); font-size: 14.5px; line-height: 1.6; }
+.row .arrow { color: var(--accent); font-size: 18px; }
+.row .after { color: var(--ink); font-size: 14.5px; line-height: 1.6; font-weight: 550; }
+@media (max-width: 720px) {
+  .row, .rowhead { grid-template-columns: 1fr; gap: 8px; }
+  .row .arrow, .rowhead { display: none; }
+}
+
+/* ---------- 行内的两个按钮 ---------- */
+
+.rowacts { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.rowacts button {
+  font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink-dim); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 13px; cursor: pointer;
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.rowacts button:hover { color: var(--ink); border-color: var(--ink-dim); }
+.rowacts button.ask:hover { color: var(--accent); border-color: var(--accent-dim); }
+.rowacts .done { font-size: 12.5px; font-weight: 600; color: var(--accent); }
+
+/* ---------- 浮层终端 ---------- */
+/* 荧幕本身照 frago desktop 的那块来：#10151d 底、SF Mono 13px、行高 1.35、
+   左上三颗交通灯。人在这张页面上看到的终端，和他一会儿真去看的那块是同一副
+   长相——换个样子会让「回终端问它」听起来像另一件事。 */
+
+.modal {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 28px;
+  background: rgba(4, 6, 10, .74); backdrop-filter: blur(6px);
+  animation: fade .18s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.term-win {
+  width: 100%; max-width: 760px;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: #10151d; box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+  animation: rise .28s cubic-bezier(.16, .84, .34, 1);
+}
+.term-bar {
+  position: relative; height: 34px; display: flex; align-items: center;
+  justify-content: center; gap: 8px;
+  background: #161b23; border-bottom: 1px solid #1f2632;
+  font-size: 12px; color: var(--ink-dim);
+}
+.term-bar .traffic { position: absolute; left: 12px; display: flex; gap: 8px; }
+.term-bar .tl { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,.22); }
+.term-bar .tl:first-child { background: #e8a33d; box-shadow: 0 0 6px rgba(232,163,61,.55); }
+
+.term-screen {
+  padding: 14px 16px; min-height: 232px; max-height: 52vh; overflow-y: auto;
+  font-family: "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  font-size: 13px; line-height: 1.35; color: #d8dee9;
+}
+.term-screen .l { white-space: pre-wrap; word-break: break-word; }
+.term-screen .l::after { content: "\200b"; }
+.term-screen .l.user { color: #f2f4f8; }
+.term-screen .l.user .p { color: var(--accent); }
+.term-screen .l.hook { color: #6f7b8d; }
+.term-screen .l.gap { height: 8px; }
+.term-screen .cursor {
+  display: inline-block; width: 7px; height: 14px; vertical-align: -2px;
+  margin-left: 2px; background: var(--accent); animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.term-foot {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: #0d1117; border-top: 1px solid #1f2632;
+}
+.term-foot .spacer { margin-left: auto; }
+
+/* ---------- 第 3 屏：现在能说的三句话 ---------- */
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--card);
+}
+.card .h { font-size: 15.5px; font-weight: 650; color: var(--ink); }
+.card .say {
+  font-size: 14.5px; line-height: 1.55; color: var(--ink);
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--accent-soft); border: 1px solid rgba(53, 201, 126, .26);
+}
+.card .say::before { content: "「"; color: var(--accent-dim); }
+.card .say::after { content: "」"; color: var(--accent-dim); }
+.card .why { font-size: 12.5px; color: var(--ink-dim); margin-top: auto; }
+.card .copy {
+  align-self: flex-start; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink-dim); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px; cursor: pointer;
+}
+.card .copy:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* ---------- 旧的四个数字（已不在页面上，样式留着给别处用） ---------- */
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.tile {
+  padding: 20px 20px 18px; border: 1px solid var(--line-soft); border-radius: 14px;
+  background: var(--card);
+}
+.tile .num {
+  font-family: var(--mono); font-size: clamp(30px, 4.4vw, 46px); line-height: 1;
+  font-weight: 600; letter-spacing: -1.5px; color: var(--ink);
+}
+.tile.zero .num { color: var(--warm); }
+.tile.unknown .num { color: var(--ink-dim); font-size: 26px; letter-spacing: 0; }
+.tile .label { margin-top: 10px; font-size: 14.5px; color: var(--ink); font-weight: 600; }
+.tile .note { margin-top: 6px; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+.tile .badge {
+  display: inline-block; margin-left: 8px; vertical-align: 6px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .3px;
+  color: var(--warm); border: 1px solid rgba(240, 180, 41, .35);
+  border-radius: 999px; padding: 2px 9px;
+}
+
+/* ---------- 第 4 屏：演示 ---------- */
+
+.panel {
+  padding: 20px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--card);
+}
+.panel + .panel { margin-top: 14px; }
+
+textarea#rule {
+  width: 100%; min-height: 92px; resize: vertical;
+  font: inherit; font-size: 16px; line-height: 1.6;
+  color: var(--ink); background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 11px; padding: 14px 16px;
+}
+textarea#rule::placeholder { color: var(--ink-dim); }
+textarea#rule:focus { border-color: var(--accent-dim); outline: none; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+.chip {
+  font: inherit; font-size: 13px; color: var(--ink-mid); text-align: left;
+  background: var(--bg-2); border: 1px dashed var(--line); border-radius: 9px;
+  padding: 7px 12px; cursor: pointer; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip:hover { color: var(--ink); border-color: var(--accent-dim); border-style: solid; }
+.chip-hint { font-size: 12.5px; color: var(--ink-dim); margin: 0 0 10px; }
+
+.saved-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.saved-head .tick { color: var(--accent); font-weight: 700; }
+.meta { font-size: 13px; color: var(--ink-dim); }
+.meta .mono { color: var(--ink-mid); }
+.delta { color: var(--accent); font-weight: 650; }
+
+.ask {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 16px 18px; border-radius: 12px;
+  background: var(--accent-soft); border: 1px solid rgba(53, 201, 126, .28);
+}
+.ask .text { flex: 1 1 auto; font-size: 17px; line-height: 1.5; color: var(--ink); }
+.ask .copy { flex: none; }
+
+.pipeline { list-style: none; margin: 16px 0 0; padding: 0; }
+.pipeline li {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 9px 0; font-size: 14.5px; color: var(--ink-mid);
+  border-top: 1px solid var(--line-soft);
+}
+.pipeline li:first-child { border-top: 0; }
+.pipeline .n {
+  flex: none; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--mono); font-size: 12px;
+  color: var(--accent); border: 1px solid var(--accent-dim);
+}
+
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.step { padding: 20px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--card); }
+.step .n {
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  letter-spacing: 1.2px; text-transform: uppercase;
+}
+.step h3 { margin: 10px 0 8px; font-size: 19px; }
+.step p { margin: 0; font-size: 14.5px; color: var(--ink-mid); }
+
+.trouble { list-style: none; margin: 12px 0 0; padding: 0; }
+.trouble li {
+  padding: 10px 0; font-size: 14.5px; color: var(--ink-mid);
+  border-top: 1px solid var(--line-soft);
+}
+.trouble li:first-child { border-top: 0; }
+
+.err { margin-top: 12px; font-size: 14px; color: #ff8f8f; }
+
+/* ---------- 第 6 屏 ---------- */
+
+.says { display: flex; flex-direction: column; gap: 12px; }
+.say {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 16px 18px; border: 1px solid var(--line-soft); border-radius: 13px; background: var(--card);
+}
+.say .body { flex: 1 1 auto; min-width: 0; }
+.say .quote { font-size: 16.5px; color: var(--ink); line-height: 1.5; }
+.say .quote::before { content: "「"; color: var(--accent-dim); }
+.say .quote::after { content: "」"; color: var(--accent-dim); }
+.say .why { margin-top: 6px; font-size: 13px; color: var(--ink-dim); }
+
+.links { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 20px; }
+.link {
+  display: block; padding: 14px 16px; border: 1px solid var(--line-soft);
+  border-radius: 12px; background: var(--card); color: var(--ink);
+}
+.link:hover { border-color: var(--accent-dim); text-decoration: none; }
+.link .name { font-weight: 620; font-size: 15px; }
+.link .desc { margin-top: 4px; font-size: 13px; color: var(--ink-dim); }
+
+/* ---------- 兜底 ---------- */
+
+#fallback { display: none; text-align: center; }
+#fallback.on { display: block; }
+#fallback pre {
+  display: inline-block; margin: 18px 0 0; padding: 14px 20px;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px;
+  font-family: var(--mono); font-size: 15px; color: var(--accent);
+}
+
+/* ---------- 一屏装得下 ---------- */
+/* 内容按 1440×900 排版；主流最小的两档（1366×768、1280×800）高度不够，
+   所以矮屏走一套压缩过的间距和字号，而不是让人去滚。压的是留白和字号，
+   不是内容——少给一句话，页面就少一件事说清楚。
+
+   档位由脚本按视口高度挂到 body 上，不用 @media：这样这套压缩能被真的量出来
+   （把类挂上、把舞台高度设成 768 就是那一档的样子），而 @media 只认真实窗口，
+   在别的窗口尺寸下根本测不了。 */
+
+body.h-compact .topbar { padding: 12px 28px; }
+body.h-compact .langbar { padding-bottom: 6px; }
+body.h-compact .footbar { padding: 10px 28px 14px; }
+body.h-compact .kicker { margin-bottom: 8px; }
+body.h-compact h1 { font-size: clamp(30px, 4.4vw, 44px); margin-bottom: 12px; }
+body.h-compact h2 { font-size: clamp(24px, 3vw, 32px); margin-bottom: 10px; }
+body.h-compact .hero-note { margin: -4px 0 12px; font-size: 16px; }
+body.h-compact .lead { margin-bottom: 20px; font-size: 16px; }
+body.h-compact .close { margin-top: 18px; font-size: 15px; }
+body.h-compact .btn { padding: 10px 20px; font-size: 14.5px; }
+body.h-compact .rows { gap: 10px; }
+body.h-compact .row { padding: 13px 18px; }
+body.h-compact .row .before, .row .after { font-size: 14px; line-height: 1.55; }
+body.h-compact .rowacts { margin-top: 9px; }
+body.h-compact .tiles { gap: 11px; }
+body.h-compact .tile { padding: 15px 16px 14px; }
+body.h-compact .tile .num { font-size: clamp(26px, 3.4vw, 36px); }
+body.h-compact .tile .note { margin-top: 5px; font-size: 12.5px; }
+body.h-compact .steps { gap: 11px; }
+body.h-compact .step { padding: 15px 16px; }
+body.h-compact .step h3 { margin: 8px 0 6px; font-size: 17px; }
+body.h-compact .step p { font-size: 14px; }
+body.h-compact .says { gap: 8px; }
+body.h-compact .say { padding: 10px 15px; }
+body.h-compact .say .quote { font-size: 14.5px; }
+body.h-compact .say .why { margin-top: 4px; font-size: 12.5px; }
+body.h-compact .links { gap: 10px; margin-top: 12px; }
+body.h-compact .link { padding: 11px 14px; }
+body.h-compact .link .desc { margin-top: 3px; font-size: 12.5px; }
+body.h-compact .panel { padding: 16px; }
+body.h-compact textarea#rule { min-height: 76px; }
+body.h-compact .term-screen { min-height: 190px; max-height: 46vh; }
+
+/* 再矮一档（1280×720 这类）：继续压，而不是让最后一屏被切掉。 */
+body.h-tight .topbar { padding: 10px 28px; }
+body.h-tight .footbar { padding: 8px 28px 12px; }
+body.h-tight h1 { font-size: clamp(28px, 4vw, 40px); }
+body.h-tight h2 { font-size: clamp(22px, 2.7vw, 29px); }
+body.h-tight .lead { margin-bottom: 16px; font-size: 15px; }
+body.h-tight .close { margin-top: 14px; font-size: 14.5px; }
+body.h-tight .row { padding: 11px 16px; }
+body.h-tight .rows { gap: 8px; }
+body.h-tight .say { padding: 10px 14px; }
+body.h-tight .says { gap: 8px; }
+body.h-tight .link { padding: 10px 13px; }
+body.h-tight .links { margin-top: 10px; }
+body.h-tight .step { padding: 13px 15px; }
+body.h-tight .tile { padding: 13px 14px 12px; }
+body.h-tight .say .quote { font-size: 14.5px; }
+body.h-tight .say .why { font-size: 12px; }
+body.h-tight .link .name { font-size: 14px; }
+body.h-tight .link .desc { font-size: 12px; }
+body.h-tight .links { margin-top: 8px; }
+body.h-tight .kicker { margin-bottom: 6px; }
+body.h-tight .slide .btn-row { margin-top: 12px !important; }
+
+/* ---------- 万一还是滚了 ---------- */
+/* 兜底不是把滚动条藏起来——藏起来的结果是人不知道下面还有东西。
+   给一条细的、半透明的、圆头的，平时几乎看不见，滚起来才显形；
+   底边再加一道渐隐，告诉人「下面还有」。 */
+
+.slide { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .16) transparent; }
+.slide::-webkit-scrollbar { width: 10px; }
+.slide::-webkit-scrollbar-track { background: transparent; }
+.slide::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .14); border-radius: 999px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+.slide:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .26); background-clip: padding-box; }
+
+.deck::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46px;
+  pointer-events: none; opacity: 0; transition: opacity .2s ease;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+.deck.scrollable::after { opacity: 1; }
+
+[hidden] { display: none !important; }
+</style>
+</head>
+
+<body>
+<div class="stage">
+
+  <header class="topbar">
+    <span class="brand"><img src="img/logo.png" alt="frago" width="26" height="26">frago</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="skip" hidden></button>
+  </header>
+
+  <!-- 语言在内容正上方，跟内容左边界对齐：它是这一页的开关，不是站点导航。 -->
+  <div class="langbar" id="langbar" hidden>
+    <div class="langpill" role="group" aria-label="language">
+      <button data-lang="en">English</button>
+      <button data-lang="zh">中文</button>
+    </div>
+  </div>
+
+  <main class="deck" id="deck">
+
+    <!-- 兜底：状态读不到时唯一显示的东西。官网文案旧只是不好看，白屏是事故。 -->
+    <section id="fallback">
+      <h2 id="fb-title">这张页面还没有内容</h2>
+      <p class="lead" id="fb-body" style="margin-inline:auto"></p>
+      <pre id="fb-cmd"></pre>
+    </section>
+
+    <!-- 1 开场 -->
+    <section class="slide" data-slide="0">
+      <p class="kicker" data-rise="1" id="s1-kicker"></p>
+      <p class="hero-note" data-rise="1" id="s1-note"></p>
+      <h1 data-rise="2" id="s1-title"></h1>
+      <div class="btn-row" data-rise="3">
+        <button class="btn btn-primary" data-next id="s1-cta"></button>
+        <button class="btn-text underline" data-goto="5" id="s1-skip"></button>
+      </div>
+    </section>
+
+    <!-- 2 换掉了什么 -->
+    <section class="slide" data-slide="1">
+      <p class="kicker" data-rise="1" id="s2-kicker"></p>
+      <h2 data-rise="1" id="s2-title"></h2>
+      <p class="lead" data-rise="2" id="s2-lead"></p>
+      <div class="rowhead" data-rise="3" id="s2-head" hidden><span class="before" id="s2-beforelabel"></span><span></span><span class="after" id="s2-afterlabel"></span></div>
+      <div class="rows" data-rise="3" id="s2-rows"></div>
+      <p class="close" data-rise="4" id="s2-close"></p>
+    </section>
+
+    <!-- 3 现在你能拿它干什么 -->
+    <section class="slide" data-slide="2">
+      <p class="kicker" data-rise="1" id="s3-kicker"></p>
+      <h2 data-rise="1" id="s3-title"></h2>
+      <p class="lead" data-rise="2" id="s3-lead"></p>
+      <div class="cards" data-rise="3" id="s3-cards"></div>
+      <p class="close" data-rise="4" id="s3-note"></p>
+      <div class="btn-row" data-rise="5" style="margin-top:22px">
+        <button class="btn btn-primary" data-next id="s3-cta"></button>
+      </div>
+    </section>
+
+    <!-- 4 演示 -->
+    <section class="slide" data-slide="3">
+      <p class="kicker" data-rise="1" id="s4-kicker"></p>
+      <h2 data-rise="1" id="s4-title"></h2>
+      <p class="lead" data-rise="2" id="s4-lead"></p>
+
+      <div class="panel" data-rise="3" id="write-panel">
+        <p class="chip-hint" id="s4-samplehint"></p>
+        <div class="chips" id="s4-chips"></div>
+        <textarea id="rule" rows="3"></textarea>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn btn-primary" id="remember"></button>
+          <span class="meta" id="rule-count"></span>
+        </div>
+        <p class="err" id="save-err" hidden></p>
+      </div>
+
+      <div class="panel" id="saved-panel" hidden>
+        <div class="saved-head">
+          <span class="tick">✓</span>
+          <strong id="s4-savedtitle"></strong>
+          <span class="meta" id="saved-meta"></span>
+        </div>
+        <h3 style="margin:16px 0 6px;font-size:20px" id="s4-step2title"></h3>
+        <p class="lead" style="margin:0 0 12px" id="s4-step2lead"></p>
+        <div class="ask">
+          <div class="text" id="question"></div>
+          <button class="btn copy" id="copy-q"></button>
+        </div>
+        <p class="meta" style="margin:10px 0 0" id="s4-step2hint"></p>
+
+        <p class="chip-hint" style="margin:20px 0 0" id="s4-pipelinetitle"></p>
+        <ol class="pipeline" id="s4-pipeline"></ol>
+
+        <div class="btn-row" style="margin-top:20px" id="ask-row">
+          <strong id="s4-asktitle" style="font-size:15px"></strong>
+          <button class="btn btn-primary" id="s4-yes"></button>
+          <button class="btn" id="s4-no"></button>
+        </div>
+
+        <div id="yes-panel" hidden style="margin-top:18px">
+          <h3 id="s4-yestitle" style="font-size:19px"></h3>
+          <p class="close" style="margin:8px 0 0" id="s4-yesbody"></p>
+          <div class="btn-row" style="margin-top:16px">
+            <button class="btn btn-primary" data-next id="s4-yesnext"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="trouble-panel" hidden>
+        <h3 id="s4-notitle"></h3>
+        <ul class="trouble" id="s4-nosteps"></ul>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn" data-next id="s4-anyway"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 刚才那一下 -->
+    <section class="slide" data-slide="4">
+      <p class="kicker" data-rise="1" id="s5-kicker"></p>
+      <p class="prodname" data-rise="1" id="s5-product"></p>
+      <h2 class="sub" data-rise="1" id="s5-title"></h2>
+      <p class="pagenote" data-rise="2" id="s5-note"></p>
+      <div class="steps" data-rise="2" id="s5-steps" style="margin-top:18px"></div>
+      <p class="close" data-rise="3" id="s5-close"></p>
+      <div class="btn-row" data-rise="4" style="margin-top:26px">
+        <button class="btn btn-primary" data-next id="s5-cta"></button>
+      </div>
+    </section>
+
+    <!-- 6 接下来 -->
+    <section class="slide" data-slide="5">
+      <p class="kicker" data-rise="1" id="s6-kicker"></p>
+      <h2 data-rise="1" id="s6-title"></h2>
+      <p class="lead" data-rise="2" id="s6-lead"></p>
+      <div class="says" data-rise="3" id="s6-says"></div>
+      <p class="chip-hint" data-rise="4" style="margin:24px 0 0" id="s6-linkstitle"></p>
+      <div class="links" data-rise="4" id="s6-links"></div>
+      <div class="btn-row" data-rise="5" style="margin-top:22px">
+        <button class="btn-text" data-goto="0" id="s6-restart"></button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 「没听懂」按下之后的那块荧幕。它演的是这个人一会儿真会做的事：
+       在终端里问一句，frago 先替 agent 取该取的东西，agent 再开口。 -->
+  <div class="modal" id="term-modal" hidden>
+    <div class="term-win" role="dialog" aria-modal="true" aria-labelledby="term-title">
+      <div class="term-bar">
+        <span class="traffic"><span class="tl"></span><span class="tl"></span><span class="tl"></span></span>
+        <span id="term-title"></span>
+      </div>
+      <div class="term-screen" id="term-screen"></div>
+      <div class="term-foot">
+        <button class="btn-text" id="term-skip"></button>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="term-done"></button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footbar">
+    <div class="dots" id="dots"></div>
+    <span class="spacer"></span>
+    <span class="keyhint" id="keyhint" hidden><kbd>←</kbd><kbd>→</kbd><span id="keyhint-text"></span></span>
+  </footer>
+
+</div>
+
+<script>
+/* 这张页面自己不含一个字。所有文案来自配方 frago_welcome 发布的状态，
+ * 骨架只负责把它们摆到位、把两处交互接回配方。
+ *
+ * 主人与访客拿到的 config.json 形状不同：访客那份被服务端过滤过，`public` 块
+ * 摊平到顶层；主人拿到的是原始状态，`public` 还嵌在里面。两种都吃，所以下面
+ * 先合并一次。 */
+
+const LANG_KEY = "frago-welcome-lang";
+const H = { "Content-Type": "application/json" };
+
+let CFG = null;    // 合并后的状态
+let TEXT = null;   // 当前语言那一份文案
+let LANG = "zh";
+let AT = 0;        // 当前第几屏
+let STATS = null;  // 本机实况，写完知识后会被刷新
+
+/* ---------- 小工具 ---------- */
+
+const el = (id) => document.getElementById(id);
+
+function put(id, value) {                     // 只走 textContent，不拼 HTML
+  const node = el(id);
+  if (node) node.textContent = value == null ? "" : String(value);
+}
+
+function node(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+async function copy(text, btn, done) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const t = document.createElement("textarea");
+    t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } finally { t.remove(); }
+  }
+  if (btn) {
+    const was = btn.textContent;
+    btn.textContent = done;
+    setTimeout(() => { btn.textContent = was; }, 1600);
+  }
+}
+
+/* 干活：本机走主人的控制面，同步拿得到真实返回值。访客走 /app/<名>/run，
+ * 只拿得到一句「已受理」——这张页面本来就只给本机的人看，那一路只做兜底，
+ * 不去轮询。 */
+async function act(mode, params) {
+  const body = JSON.stringify({ params: Object.assign({ mode }, params || {}) });
+  if (CFG.apiBase) {
+    const r = await fetch(`${CFG.apiBase}/recipes/${CFG.recipeName}/run`,
+                          { method: "POST", headers: H, body });
+    const out = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(out.detail || `服务端 ${r.status}`);
+    return out.data || {};
+  }
+  const r = await fetch("run", { method: "POST", headers: H, body });
+  if (r.status !== 202) {
+    const out = await r.json().catch(() => ({}));
+    throw new Error(out.detail || `服务端 ${r.status}`);
+  }
+  return null;
+}
+
+/* ---------- 翻页 ---------- */
+
+const slides = () => Array.from(document.querySelectorAll(".slide"));
+
+/* ---------- 每一屏一个地址 ---------- */
+/* 地址是这张页面的真状态：#1 是开场，#4 是那场演示，#6 是收尾。
+ * 于是这几件事都成立——把某一屏发给别人、刷新之后还停在原处、
+ * 用浏览器的前进后退在屏间走、agent 直接把人送到某一屏。
+ *
+ * 分工：go() 只管改地址，paint() 只管画。翻页一律走地址，画面是地址变化的
+ * 结果而不是它的旁支——两边各画各的，迟早会出现「地址在第 3 屏、画面在第 5 屏」
+ * 那种谁也说不清的状态。 */
+
+function slideFromHash() {
+  const m = (location.hash || "").match(/^#(\d+)$/);
+  if (!m) return null;
+  const n = Number(m[1]) - 1;
+  return n >= 0 && n < slides().length ? n : null;
+}
+
+function go(i, replace) {
+  const all = slides();
+  const n = Math.max(0, Math.min(all.length - 1, i));
+  const want = "#" + (n + 1);
+  if (location.hash === want) { paint(n); return; }
+  if (replace) {
+    // 开场和换语言用替换：不该在浏览器的后退历史里留下一步。
+    history.replaceState(null, "", want);
+    paint(n);
+  } else {
+    // 正常翻页写进历史，后退键就能回上一屏；地址一变，hashchange 负责画。
+    location.hash = want;
+  }
+}
+
+//: 老名字留着，页面上所有翻页动作都还叫 show()。
+function show(i) { go(i); }
+
+function paint(i) {
+  const all = slides();
+  AT = Math.max(0, Math.min(all.length - 1, i));
+  all.forEach((s, n) => s.classList.toggle("on", n === AT));
+  Array.from(el("dots").children).forEach((d, n) => d.classList.toggle("on", n === AT));
+  el("skip").hidden = AT >= all.length - 1;
+  el("keyhint").hidden = false;
+  const on = all[AT];
+  if (on) on.scrollTop = 0;
+  // 这一屏还装不下时才点亮底边那道渐隐——没有东西可滚却挂着阴影，
+  // 等于骗人往下看。
+  requestAnimationFrame(() => {
+    const over = on ? on.scrollHeight - on.clientHeight > 4 : false;
+    el("deck").classList.toggle("scrollable", over);
+  });
+}
+
+// 视口多高就走哪一档。两档是累加的：矮到 tight 时 compact 也挂着。
+function fitTier() {
+  const h = window.innerHeight;
+  document.body.classList.toggle("h-compact", h <= 880);
+  document.body.classList.toggle("h-tight", h <= 780);
+}
+
+function wireDots() {
+  const box = el("dots");
+  box.textContent = "";
+  slides().forEach((_, n) => {
+    const b = node("button");
+    b.setAttribute("aria-label", `${n + 1}`);
+    b.addEventListener("click", () => show(n));
+    box.appendChild(b);
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  const modal = document.getElementById("term-modal");
+  if (modal && !modal.hidden) {
+    // 浮层开着的时候方向键不该翻页——底下那一屏人根本看不见。
+    if (e.key === "Escape") closeTerminal();
+    else SKIP = true;
+    return;
+  }
+  const typing = e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT");
+  if (e.key === "ArrowRight" || (!typing && (e.key === "PageDown"))) show(AT + 1);
+  else if (e.key === "ArrowLeft" || (!typing && e.key === "PageUp")) show(AT - 1);
+  else if (!typing && e.key === " ") { e.preventDefault(); show(AT + 1); }
+});
+
+/* ---------- 装配 ---------- */
+
+function fillReady() {
+  const box = el("s3-cards");
+  box.textContent = "";
+  TEXT.ready.cards.forEach((c) => {
+    const card = node("div", "card");
+    card.appendChild(node("div", "h", c.h));
+    card.appendChild(node("div", "say", c.say));
+    card.appendChild(node("div", "why", c.why));
+    const b = node("button", "copy", TEXT.ready.copy);
+    b.addEventListener("click", () => copy(c.say, b, TEXT.ready.copied));
+    card.appendChild(b);
+    box.appendChild(card);
+  });
+}
+
+function fillRows() {
+  const box = el("s2-rows");
+  box.textContent = "";
+  TEXT.shift.rows.forEach((r, i) => {
+    const row = node("div", "row");
+    row.appendChild(node("div", "before", r.before));
+    row.appendChild(node("div", "arrow", "→"));
+
+    const after = node("div", "after", r.after);
+    // 每条右边两个按钮。「没听懂」不是道歉按钮——它是这张页面上最该被按的
+    // 那一个：按下去看到的，正是这个人一会儿在自己终端里会遇到的那一幕。
+    if (r.demo) {
+      const acts = node("div", "rowacts");
+      const yes = node("button", "yes", TEXT.shift.gotIt);
+      const no = node("button", "ask", TEXT.shift.notYet);
+      yes.addEventListener("click", () => {
+        acts.textContent = "";
+        acts.appendChild(node("span", "done", TEXT.shift.understood));
+      });
+      no.addEventListener("click", () => openTerminal(r));
+      acts.appendChild(yes);
+      acts.appendChild(no);
+      after.appendChild(acts);
+    }
+    row.appendChild(after);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- 浮层终端：把「回终端问它」先演一遍 ---------- */
+
+let SKIP = false;                    // 「跳过打字」按下之后，余下的一次性落地
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function termLine(cls, text) {
+  const line = node("div", "l" + (cls ? " " + cls : ""));
+  if (cls === "user") line.appendChild(node("span", "p", "❯ "));
+  const body = node("span", null, text || "");
+  line.appendChild(body);
+  el("term-screen").appendChild(line);
+  return body;
+}
+
+async function typeInto(body, text, speed) {
+  const screen = el("term-screen");
+  const cursor = node("span", "cursor");
+  body.parentNode.appendChild(cursor);
+  for (let i = 0; i < text.length; i++) {
+    if (SKIP) { body.textContent = text; break; }
+    body.textContent += text[i];
+    screen.scrollTop = screen.scrollHeight;
+    await sleep(speed);
+  }
+  cursor.remove();
+  screen.scrollTop = screen.scrollHeight;
+}
+
+async function openTerminal(row) {
+  const d = row.demo;
+  SKIP = false;
+  el("term-title").textContent = TEXT.shift.termTitle;
+  put("term-skip", TEXT.shift.termSkip);
+  put("term-done", TEXT.shift.termDone);
+  el("term-screen").textContent = "";
+  el("term-modal").hidden = false;
+
+  await sleep(320);
+  await typeInto(termLine("user"), d.ask, 34);      // 人打字的速度
+  await sleep(SKIP ? 0 : 380);
+  termLine("gap");
+  await typeInto(termLine("hook"), d.hook, 6);      // 这一行是 frago 插的，不是人
+  termLine("gap");
+
+  // 这句话真的交给这台机器上的 agent 去答。等的时候屏幕上有一行在动，
+  // 人才知道是在跑，而不是页面卡了。
+  const core = CFG.agentCore || "claude";
+  const waiting = termLine("hook", "");
+  waiting.textContent = fmt(TEXT.shift.waiting, core);
+  const dots = setInterval(() => {
+    waiting.textContent = fmt(TEXT.shift.waiting, core) +
+      ".".repeat((Math.floor(Date.now() / 420) % 4));
+  }, 420);
+
+  let out = null;
+  try {
+    out = await act("ask", { topic: d.topic, lang: LANG });
+  } catch (_) { out = null; }
+  clearInterval(dots);
+
+  if (out && out.live && out.lines && out.lines.length) {
+    waiting.parentNode.remove();
+    for (const line of out.lines) {
+      if (el("term-modal").hidden) return;           // 人已经关掉了
+      await typeInto(termLine(), line, 13);
+      await sleep(SKIP ? 0 : 70);
+    }
+    return;
+  }
+
+  // 兜底：跑不起来就放那份写好的示例，并且明说它是示例。刚装完的机器还没配
+  // 模型，这条路本来就该允许走不通——但不能让人以为这是 agent 答的。
+  waiting.parentNode.remove();
+  await typeInto(termLine("hook"), TEXT.shift.fallbackNote, 6);
+  termLine("gap");
+  for (const line of d.reply) {
+    if (el("term-modal").hidden) return;
+    await typeInto(termLine(), line, 13);
+    await sleep(SKIP ? 0 : 70);
+  }
+}
+
+function fmt(template, value) {
+  return String(template || "").replace("{}", value);
+}
+
+function closeTerminal() {
+  SKIP = true;
+  el("term-modal").hidden = true;
+  el("term-screen").textContent = "";
+}
+
+function fillSamples() {
+  const box = el("s4-chips");
+  box.textContent = "";
+  TEXT.demo.samples.forEach((s) => {
+    const c = node("button", "chip", s);
+    c.title = s;
+    c.addEventListener("click", () => {
+      el("rule").value = s;
+      el("rule").focus();
+      countRule();
+    });
+    box.appendChild(c);
+  });
+}
+
+function fillSteps() {
+  const box = el("s5-steps");
+  box.textContent = "";
+  TEXT.why.steps.forEach((s, i) => {
+    const step = node("div", "step");
+    step.appendChild(node("div", "n", `0${i + 1}`));
+    step.appendChild(node("h3", null, s.h));
+    step.appendChild(node("p", null, s.p));
+    box.appendChild(step);
+  });
+}
+
+function fillSays() {
+  const box = el("s6-says");
+  box.textContent = "";
+  TEXT.next.items.forEach((item) => {
+    const say = node("div", "say");
+    const body = node("div", "body");
+    body.appendChild(node("div", "quote", item.say));
+    body.appendChild(node("div", "why", item.why));
+    say.appendChild(body);
+    const b = node("button", "btn", TEXT.demo.copy);
+    b.addEventListener("click", () => copy(item.say, b, TEXT.demo.copied));
+    say.appendChild(b);
+    box.appendChild(say);
+  });
+
+  const links = el("s6-links");
+  links.textContent = "";
+  TEXT.next.links.forEach((l) => {
+    const a = node("a", "link");
+    // 地址留空的那一条指向站点根（会话工作台）。后端不发这个地址是故意的：
+    // 它以 / 开头，会被发布时那道路径闸拦下，而页面本来就知道自己开在哪。
+    a.href = l.href || "/";
+    if (/^https?:/.test(l.href)) { a.target = "_blank"; a.rel = "noopener"; }
+    a.appendChild(node("div", "name", l.name));
+    a.appendChild(node("div", "desc", l.desc));
+    links.appendChild(a);
+  });
+}
+
+function countRule() {
+  const n = el("rule").value.trim().length;
+  put("rule-count", n ? `${n}` : "");
+}
+
+function render() {
+  TEXT = CFG.content[LANG] || CFG.content.zh;
+  document.documentElement.lang = LANG;
+
+  put("skip", TEXT.nav.skip);
+  document.querySelectorAll(".langpill button").forEach((b) =>
+    b.classList.toggle("on", b.dataset.lang === LANG));
+
+  put("s1-kicker", TEXT.hero.kicker);
+  put("s1-note", TEXT.hero.note);
+  put("s1-title", TEXT.hero.title);
+  put("s1-cta", TEXT.hero.cta);
+  put("s1-skip", TEXT.hero.skip);
+  put("keyhint-text", TEXT.hero.hint);
+
+  put("s2-kicker", TEXT.shift.kicker);
+  put("s2-title", TEXT.shift.title);
+  put("s2-lead", TEXT.shift.lead);
+  put("s2-close", TEXT.shift.close);
+  put("s2-beforelabel", TEXT.shift.beforeLabel);
+  put("s2-afterlabel", TEXT.shift.afterLabel);
+  el("s2-head").hidden = false;
+  fillRows();
+
+  put("s3-kicker", TEXT.ready.kicker);
+  put("s3-title", TEXT.ready.title);
+  put("s3-lead", TEXT.ready.lead);
+  put("s3-note", TEXT.ready.note);
+  put("s3-cta", TEXT.ready.cta);
+  fillReady();
+
+  put("s4-kicker", TEXT.demo.kicker);
+  put("s4-title", TEXT.demo.title);
+  put("s4-lead", TEXT.demo.lead);
+  put("s4-samplehint", TEXT.demo.sampleHint);
+  put("remember", TEXT.demo.button);
+  put("s4-savedtitle", TEXT.demo.savedTitle);
+  put("s4-step2title", TEXT.demo.step2Title);
+  put("s4-step2lead", TEXT.demo.step2Lead);
+  put("s4-yestitle", TEXT.demo.yesTitle);
+  put("s4-yesbody", TEXT.demo.yesBody);
+  put("s4-yesnext", TEXT.demo.cta);
+  put("s4-step2hint", TEXT.demo.step2Hint);
+  put("s4-pipelinetitle", TEXT.demo.pipelineTitle);
+  put("copy-q", TEXT.demo.copy);
+  put("s4-asktitle", TEXT.demo.askTitle);
+  put("s4-yes", TEXT.demo.yes);
+  put("s4-no", TEXT.demo.no);
+  put("s4-notitle", TEXT.demo.noTitle);
+  put("s4-anyway", TEXT.demo.cta);
+  el("rule").placeholder = TEXT.demo.placeholder;
+  fillSamples();
+
+  const pipe = el("s4-pipeline");
+  pipe.textContent = "";
+  TEXT.demo.pipeline.forEach((line, i) => {
+    const li = node("li");
+    li.appendChild(node("span", "n", String(i + 1)));
+    li.appendChild(node("span", null, line));
+    pipe.appendChild(li);
+  });
+
+  const no = el("s4-nosteps");
+  no.textContent = "";
+  TEXT.demo.noSteps.forEach((line) => no.appendChild(node("li", null, line)));
+
+  put("s5-kicker", TEXT.why.kicker);
+  put("s5-product", TEXT.why.product);
+  put("s5-note", TEXT.why.note);
+  put("s5-title", TEXT.why.title);
+  put("s5-close", TEXT.why.close);
+  put("s5-cta", TEXT.why.cta);
+  fillSteps();
+
+  put("s6-kicker", TEXT.next.kicker);
+  put("s6-title", TEXT.next.title);
+  put("s6-lead", TEXT.next.lead);
+  put("s6-linkstitle", TEXT.next.linksTitle);
+  put("s6-restart", TEXT.next.restart);
+  fillSays();
+
+  el("langbar").hidden = false;
+  el("skip").hidden = false;
+}
+
+/* ---------- 那一处真的写操作 ---------- */
+
+async function remember() {
+  const btn = el("remember");
+  const rule = el("rule").value.trim();
+  const err = el("save-err");
+  err.hidden = true;
+
+  if (!rule) {
+    err.textContent = TEXT.demo.empty;
+    err.hidden = false;
+    el("rule").focus();
+    return;
+  }
+
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = TEXT.demo.busy;
+
+  try {
+    const out = await act("remember", { rule });
+    if (!out) {                                  // 访客那一路，只有「已受理」
+      err.textContent = TEXT.demo.error + " — " + TEXT.fallback.command;
+      err.hidden = false;
+      return;
+    }
+    const q = (out.question && out.question[LANG]) || out.recall_command;
+    el("question").textContent = q;
+    el("copy-q").onclick = () => copy(q, el("copy-q"), TEXT.demo.copied);
+
+    const meta = el("saved-meta");
+    meta.textContent = "";
+    meta.appendChild(node("span", null, `${TEXT.demo.savedWhere} `));
+    meta.appendChild(node("span", "mono", out.domain));
+    meta.appendChild(node("span", null, ` · ${TEXT.demo.savedDoc} `));
+    meta.appendChild(node("span", "mono", out.doc));
+
+    el("write-panel").hidden = true;
+    el("saved-panel").hidden = false;
+    el("saved-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (e) {
+    err.textContent = `${TEXT.demo.error}：${e.message}`;
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = was;
+  }
+}
+
+/* ---------- 起 ---------- */
+
+async function boot() {
+  fitTier();
+  window.addEventListener("resize", () => { fitTier(); paint(AT); });
+  wireDots();
+
+  document.querySelectorAll("[data-next]").forEach((b) =>
+    b.addEventListener("click", () => show(AT + 1)));
+  document.querySelectorAll("[data-goto]").forEach((b) =>
+    b.addEventListener("click", () => show(Number(b.dataset.goto))));
+
+  let loaded = null;
+  try {
+    const r = await fetch("config.json", { cache: "no-store" });
+    if (r.ok) loaded = await r.json();
+  } catch (_) { /* 下面按没拿到处理 */ }
+
+  if (!loaded || !(loaded.content || (loaded.public && loaded.public.content))) {
+    el("fallback").classList.add("on");
+    el("keyhint").hidden = true;
+    return;
+  }
+
+  CFG = Object.assign({}, loaded, loaded.public || {});
+  STATS = CFG.stats || null;
+
+  // 看哪门语言：他自己在胶囊上点过就按他选的，没点过一律按配方发布时给的
+  // defaultLang（默认 en）。不看浏览器语言——这张页面上语言是明摆着的一个开关，
+  // 由浏览器替人做主，反而让「我明明选了」和「它自己变了」分不清。
+  let saved = null;
+  try { saved = localStorage.getItem(LANG_KEY); } catch (_) { /* 隐私模式 */ }
+  LANG = saved || CFG.defaultLang || "en";
+  if (LANG !== "zh" && LANG !== "en") LANG = "en";
+
+  render();
+  go(slideFromHash() ?? 0, true);
+  window.addEventListener("hashchange", () => go(slideFromHash() ?? 0, true));
+
+  document.querySelectorAll(".langpill button").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (b.dataset.lang === LANG) return;
+      LANG = b.dataset.lang;
+      try { localStorage.setItem(LANG_KEY, LANG); } catch (_) { /* 隐私模式 */ }
+      const at = AT;
+      render();
+      go(at, true);
+    }));
+  el("skip").addEventListener("click", () => show(slides().length - 1));
+  el("term-skip").addEventListener("click", () => { SKIP = true; });
+  el("term-done").addEventListener("click", closeTerminal);
+  el("term-modal").addEventListener("click", (e) => {
+    if (e.target === el("term-modal")) closeTerminal();   // 点空白处关掉
+  });
+  el("remember").addEventListener("click", remember);
+  el("rule").addEventListener("input", countRule);
+  // 「答上来了」不直接翻页：先停一拍，把刚才那一下是什么说清楚，再让他自己翻。
+  el("s4-yes").addEventListener("click", () => {
+    el("ask-row").hidden = true;
+    el("trouble-panel").hidden = true;
+    el("yes-panel").hidden = false;
+    el("yes-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+  el("s4-no").addEventListener("click", () => {
+    el("trouble-panel").hidden = false;
+    el("trouble-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+}
+
+// 兜底文案在拿到状态之前就要能显示，所以它写死在这里而不是来自状态。
+put("fb-body", "页面的字来自配方发布的状态。让 agent 跑一次：");
+put("fb-cmd", "frago recipe run frago_welcome");
+
+boot();
+</script>
+</body>
+</html>
